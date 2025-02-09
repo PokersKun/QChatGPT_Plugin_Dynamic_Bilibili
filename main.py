@@ -16,7 +16,7 @@ makesure_stop_thread = False
 thread = None
 makesure_thread = None
 text = ''
-api_token = 'yWnlGN8HnpkZBEji0ZziNvIkQGi45qBW'  # 请将这里的'YOUR_TOKEN'替换为你实际获取的token
+api_token = 'YOUR_TOKEN'  # 请将这里的'YOUR_TOKEN'替换为你实际获取的token
 # 注册插件
 @register(name="Dynamic_Bilibili", description="获取b站up的动态和直播推送", version="0.1", author="zzseki")
 class B_Live(BasePlugin):
@@ -195,7 +195,7 @@ class B_Live(BasePlugin):
                                                 inf = response.json()
                                                 image_url = inf['data']['url']
                                                 ctx.add_return("reply", [Image(url=image_url)])
-                                                await ctx.send_message(target_type='person', target_id=2843149172,
+                                                await ctx.send_message(target_type='group', target_id=123456789,
                                                                        message=MessageChain([Image(url=image_url)]))
                                         # else:
                                         #     # await ctx.event.query.adapter.reply_message(ctx.event.query.message_event, [(text)],False)
