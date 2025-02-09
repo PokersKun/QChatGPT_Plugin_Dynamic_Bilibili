@@ -73,6 +73,7 @@ class B_Live(BasePlugin):
                     matches = pattern.findall(receive_text)
                     if len(matches) == 1:
                         await ctx.event.query.adapter.reply_message(ctx.event.query.message_event, [("参数个数错误，需要输入up主UID和直播间号ROOM_ID\n‘#关注up[UID][ROOM_ID]’")],False)
+                        ctx.prevent_default()
                     if len(matches) >= 2:
                         uid = matches[0]
                         room_id = matches[1]
