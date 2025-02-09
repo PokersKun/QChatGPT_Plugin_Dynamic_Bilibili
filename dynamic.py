@@ -80,8 +80,59 @@ def get_information(UID, room_id):
         # pub_time :更新时间
         base_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "path")
         path = os.path.join(base_path, f"{id}.png")
-
-        
+        if os.path.exists(path) or pub_action == '直播了':
+            if room_id != 0:
+                id = room_id
+                base_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "path")
+                path = os.path.join(base_path, f"{id}.png")
+                url = 'https://api.live.bilibili.com/room/v1/Room/get_info'
+                params = {
+                    'room_id': room_id
+                }
+                # 添加头信息
+                headers = {
+                    'User-Agent': User_Agent,
+                    'Referer': 'https://www.bilibili.com/',
+                    'Origin': 'https://www.bilibili.com',
+                    'Host': 'api.live.bilibili.com',
+                }
+                cookies = {
+                    'SESSDATA': SESSDATA,
+                }
+                urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+                response = requests.get(url, params=params, headers=headers, cookies=cookies, verify=False)
+                if response.status_code == 200:
+                    live_data = response.json()
+                    if live_data['code'] == 0:
+                        # 直播状态 0：未开播 1：直播中 2：轮播中
+                        live_status = live_data['data']['live_status']
+                        if live_status == 1:
+                            pub_action = '直播了'
+                            pub_time = ''
+                            # 直播封面
+                            live_cover_url = live_data['data']['user_cover']
+                            # 直播标题
+                            live_title = live_data['data']['title']
+                            if os.path.exists(path):
+                                return
+                            else:
+                                print(f"检测到 {username} 直播间开启")
+                                print("up:", username)
+                                print("up头像", username_url)
+                                print("直播间标题", live_title)
+                                print("直播间封面：", live_cover_url)
+                        else:
+                            if os.path.exists(path):
+                                os.remove(path)
+                            return
+                    else:
+                        print("调用直播接口失败")
+                        return
+                else:
+                    print(f"请求失败，状态码: {response.status_code}")
+                    return
+            else:
+                return
         else:
             print(f"检测到 {username} 动态更新")
             live_cover_url = None
