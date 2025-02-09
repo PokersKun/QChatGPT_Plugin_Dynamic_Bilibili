@@ -523,7 +523,6 @@ def create_rounded_rectangle_image(image, radius):
 
     # 将原始图像粘贴到白色背景上，同时应用圆角矩形蒙版
     rounded_avatar.paste(image, (0, 0), mask=rounded_mask)
-
     return rounded_avatar
 
 def cropped_image(cover_image, width=200, height=150):
