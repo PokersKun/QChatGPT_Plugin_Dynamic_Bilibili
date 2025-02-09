@@ -12,11 +12,13 @@ from mirai import Image, MessageChain, Plain
 from plugins.QChatGPT_Plugin_Dynamic_Bilibili.dynamic import get_information
 
 stop_thread = False
+makesure_stop_thread = False
 thread = None
+makesure_thread = None
 text = ''
-api_token = 'YOUR_TOKEN'  # 请将这里的'YOUR_TOKEN'替换为你实际获取的token
+api_token = 'yWnlGN8HnpkZBEji0ZziNvIkQGi45qBW'  # 请将这里的'YOUR_TOKEN'替换为你实际获取的token
 # 注册插件
-@register(name="Dynamic_Bilibili", description="获取b站up的动态推送", version="0.1", author="zzseki")
+@register(name="Dynamic_Bilibili", description="获取b站up的动态和直播推送", version="0.1", author="zzseki")
 class B_Live(BasePlugin):
     # 插件加载时触发
     def __init__(self, host: APIHost):
@@ -24,8 +26,9 @@ class B_Live(BasePlugin):
 
     @handler(PersonNormalMessageReceived)
     async def person_normal_message_received(self, ctx: EventContext, **kwargs):
-        global thread
+        global thread, makesure_thread
         global stop_thread
+        global makesure_stop_thread
         receive_text = ctx.event.text_message
         pattern = re.compile(r"#开启动态推送")
         match = pattern.search(receive_text)
@@ -41,6 +44,8 @@ class B_Live(BasePlugin):
                 else:
                     thread = threading.Thread(target=self.run_in_thread, args=(ctx,), daemon=True)
                     thread.start()
+                    makesure_thread = threading.Thread(target=self.makesure_run_in_thread, args=(ctx,), daemon=True)
+                    makesure_thread.start()
             else:
                 self.ap.logger.info("线程已经在运行中，跳过启动。")
                 await ctx.event.query.adapter.reply_message(ctx.event.query.message_event, [("动态推送已开启，无需重复开启")], False)
@@ -51,28 +56,38 @@ class B_Live(BasePlugin):
             if match:
                 if thread is not None and thread.is_alive():
                     await ctx.event.query.adapter.reply_message(ctx.event.query.message_event, [("正在关闭动态推送......")], False)
+                    makesure_stop_thread = True
+                    makesure_thread.join()  # 等待保险线程结束
                     stop_thread = True
                     thread.join()  # 等待线程结束
                     self.ap.logger.info("动态推送线程关闭")
                     await ctx.event.query.adapter.reply_message(ctx.event.query.message_event, [("已关闭动态推送")], False)
+                    print("动态推送线程已彻底关闭")
                 else:
                     await ctx.event.query.adapter.reply_message(ctx.event.query.message_event, [("未开启动态推送，无需关闭")], False)
                 ctx.prevent_default()
             else:
-                pattern = re.compile(r"#关注up.*\[(\d+)\]")
-                match = pattern.search(receive_text)
-                if match:
-                    id = match.group(1)
-                    with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "UID.txt"), "r", encoding="utf-8") as file:
-                        existing_ids = file.read().splitlines()  # 读取所有ID并按行分割
-                    if id not in existing_ids:
-                        with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "UID.txt"), "a", encoding="utf-8") as file:
-                            file.write(id + f"\n")
-                        await ctx.event.query.adapter.reply_message(ctx.event.query.message_event, [("关注成功")], False)
-                        await ctx.event.query.adapter.reply_message(ctx.event.query.message_event, [("注意需要关闭并重新开启动态推送功能才会生效")], False)
-                    else:
-                        await ctx.event.query.adapter.reply_message(ctx.event.query.message_event, [("此up已在关注列表中，无需重复添加")], False)
-                    ctx.prevent_default()
+                if "#关注up" in receive_text:
+                    # 如果包含，使用正则表达式提取方括号中的数字
+                    pattern = re.compile(r'\[(\d+)\]')  # 匹配方括号内的数字
+                    matches = pattern.findall(receive_text)
+                    if len(matches) >= 2:
+                        uid = matches[0]
+                        room_id = matches[1]
+                        with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "UID.txt"), "r", encoding="utf-8") as file:
+                            # 读取文件内容并按行分割
+                            lines = file.read().splitlines()
+                            # 使用列表推导式获取每行按 | 分割后的第一个元素
+                            existing_ids = [line.split("|")[0] for line in lines]
+                        if uid not in existing_ids:
+                            id = f"{uid}|{room_id}"
+                            with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "UID.txt"), "a", encoding="utf-8") as file:
+                                file.write(id + f"\n")
+                            await ctx.event.query.adapter.reply_message(ctx.event.query.message_event, [("关注成功")], False)
+                            await ctx.event.query.adapter.reply_message(ctx.event.query.message_event, [("注意需要关闭并重新开启动态推送功能才会生效")], False)
+                        else:
+                            await ctx.event.query.adapter.reply_message(ctx.event.query.message_event, [("此up已在关注列表中，无需重复添加")], False)
+                        ctx.prevent_default()
                 pattern = re.compile(r"#取消关注up.*\[(\d+)\]")
                 match = pattern.search(receive_text)
                 if match:
@@ -83,25 +98,46 @@ class B_Live(BasePlugin):
                     with open(file_path, "r", encoding="utf-8") as file:
                         lines = file.readlines()
 
-                    # 过滤掉要删除的ID
-                    updated_lines = [line for line in lines if line.strip() != id_to_remove]
+                    # 过滤掉要删除的 ID
+                    updated_lines = [line for line in lines if line.strip().split("|")[0] != id_to_remove]
 
                     # 只有当内容有变化时才写回文件
                     if updated_lines != lines:
                         with open(file_path, "w", encoding="utf-8") as file:
                             file.writelines(updated_lines)
-                        print(f"UID {id_to_remove} 已删除。")
+                        print(f"ID {id_to_remove} 已删除。")
                         await ctx.event.query.adapter.reply_message(ctx.event.query.message_event, [("取消关注成功")], False)
                         await ctx.event.query.adapter.reply_message(ctx.event.query.message_event, [("注意需要关闭并重新开启动态推送功能才会生效")], False)
                     else:
-                        print(f"UID {id_to_remove} 不存在。")
+                        print(f"ID {id_to_remove} 不存在。")
                         await ctx.event.query.adapter.reply_message(ctx.event.query.message_event, [("未关注该up无需取关")], False)
                     ctx.prevent_default()
 
     def run_in_thread(self, ctx):
-        asyncio.run(self.main(ctx))  # 在独立线程中运行异步函数
+        try:
+            asyncio.run(self.main(ctx))
+        except Exception as e:
+            print(f"执行异步函数 main 时出现异常: {e}")
+
+    def makesure_run_in_thread(self, ctx):
+        try:
+            asyncio.run(self.makesure_main(ctx))
+        except Exception as e:
+            print(f"执行异步函数 makesure_main 时出现异常: {e}")
+
+    async def makesure_main(self, ctx):
+        global thread
+        while not makesure_stop_thread:
+            await asyncio.sleep(60*5)
+            if thread is None or not thread.is_alive():
+                thread = threading.Thread(target=self.run_in_thread, args=(ctx,), daemon=True)
+                thread.start()
+                await ctx.event.query.adapter.reply_message(ctx.event.query.message_event,[("动态推送线程意外关闭，正在自动重新开启...")], False)
+            else:
+                continue
 
     async def main(self, ctx):
+        i = 0
         global stop_thread
         global text
         global processes
@@ -113,17 +149,24 @@ class B_Live(BasePlugin):
             await ctx.event.query.adapter.reply_message(ctx.event.query.message_event, [("开启失败，关注up数量为0\n请发送'#关注up[UID]'以添加关注")], False)
         else:
             for id in ids:
-                get_information(id)
-            time.sleep(10)
+                uid = id.split("|")[0]
+                room_id = id.split("|")[1]
+                get_information(uid, room_id)
+            await asyncio.sleep(10)
             # 清除历史文本
             with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "path.txt"), 'w') as file:
                 pass
             await ctx.event.query.adapter.reply_message(ctx.event.query.message_event, [("成功开启动态推送")], False)
             while not stop_thread:
+                i += 1
+                if i%100 == 0:
+                    self.ap.logger.info("动态推送线程正在运行中...")
                 try:
                     for id in ids:
-                        get_information(id)
-                        time.sleep(60)
+                        await asyncio.sleep(120)
+                        uid = id.split("|")[0]
+                        room_id = id.split("|")[1]
+                        get_information(uid, room_id)
                         if os.path.exists(os.path.join(os.path.dirname(os.path.realpath(__file__)), "path.txt")):
                             with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "path.txt"), "r",
                                       encoding="utf-8") as file:
@@ -152,13 +195,14 @@ class B_Live(BasePlugin):
                                                 inf = response.json()
                                                 image_url = inf['data']['url']
                                                 ctx.add_return("reply", [Image(url=image_url)])
-                                                await ctx.send_message(target_type='group', target_id=123456789, message=MessageChain([Image(url=image_url)]))
+                                                await ctx.send_message(target_type='person', target_id=2843149172,
+                                                                       message=MessageChain([Image(url=image_url)]))
                                         # else:
                                         #     # await ctx.event.query.adapter.reply_message(ctx.event.query.message_event, [(text)],False)
                                         #     await ctx.send_message(target_type='group', target_id=123456789, message=text)
                                 except:
                                     continue
-                    time.sleep(60)
+                    await asyncio.sleep(60)
                 except:
                     continue
     # 插件卸载时触发

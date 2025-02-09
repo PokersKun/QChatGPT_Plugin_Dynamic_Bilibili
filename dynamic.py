@@ -6,8 +6,31 @@ from PIL import Image, ImageDraw, ImageOps
 import requests
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
+import urllib3
 
-def get_information(UID):
+User_Agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36"
+SESSDATA = "f2155e53%2C1743061593%2Cb3387%2A91CjAmyos_WgzD5j-CqeY9naaYIiiPaQc-q27XL3dh-yDUoqoO9OPDFYiUWvxkcDVzcK0SVmMxQ1pYWUVNM0I3N3BLTjd0U21VZ0F1QjBZV3Jjd1FSRWRQM01BUVF4Q2ptVWdOVkdrV25Dd09waC1kc3FqVnFJTUI2bzlKNFctRmQzNjNYdVB5M1V3IIEC"
+
+def get_information(UID, room_id):
+    # live_cover_url直播封面
+    # live_title直播标题
+    # dynamic_text原动态文本
+    # emoji_list动态文本表情列表
+    # emoji_list_text动态文本表情URL
+    # cover_url视频封面URL
+    # video_title视频标题
+    # description无视频简介
+    # src_list动态图片URL
+    live_cover_url = None
+    live_title = None
+    dynamic_text = None
+    emoji_list = None
+    emoji_list_text = None
+    cover_url = None
+    video_title = None
+    description = None
+    src_list = None
+
     url = 'https://api.bilibili.com/x/polymer/web-dynamic/v1/feed/space'
     params = {
         'host_mid': UID
@@ -15,22 +38,23 @@ def get_information(UID):
 
     # 添加头信息
     headers = {
-        'User-Agent': '',
+        'User-Agent': User_Agent,
         'Referer': 'https://www.bilibili.com/',
         'Origin': 'https://www.bilibili.com',
         'Host': 'api.bilibili.com',
     }
     cookies = {
-        'SESSDATA': '',
+        'SESSDATA': SESSDATA,
     }
 
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     response = requests.get(url, params=params, headers=headers, cookies=cookies, verify=False)
 
     # 如果成功获取数据，输出内容
     if response.status_code == 200:
         data = response.json()
+        i = 0
         try:
-            i = 0
             is_top = data['data']['items'][i]['modules']['module_tag']['text']
             while is_top == "置顶":
                 i += 1
@@ -39,86 +63,128 @@ def get_information(UID):
                     if is_top == "置顶":
                         continue
                     else:
-                        print(f"已忽略{i}条置顶动态")
+                        # print(f"已忽略{i}条置顶动态")
                         break
                 except:
-                    print(f"已忽略{i}条置顶动态")
+                    # print(f"已忽略{i}条置顶动态")
                     break
         except:
-            print("无置顶动态")
+            pass
+            #print("无置顶动态")
         id = data['data']['items'][i]['id_str']
-        base_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "path")
-        path = os.path.join(base_path, f"{id}.png")
-        if os.path.exists(path):
-            print("未更新动态")
-            # print("等待1分钟再次执行")
-            # time.sleep(60)
-            # continue
-            return
-        try:
-            if data['data']['items'][i]['modules']['module_dynamic']['desc']['text']:
-                dynamic_text = data['data']['items'][i]['modules']['module_dynamic']['desc']['text']
-                print("原动态文本:", dynamic_text)
-        except:
-            dynamic_text = None
-            print("无动态文本")
-        try:
-            if data['data']['items'][i]['modules']['module_dynamic']['desc']['rich_text_nodes']:
-                items_list = data['data']['items'][i]['modules']['module_dynamic']['desc']['rich_text_nodes']
-                emoji_list = [node['emoji']['icon_url'] for node in items_list if 'emoji' in node]
-                emoji_list_text = [node['emoji']['text'] for node in items_list if 'emoji' in node]
-                print("动态文本表情 URL:", emoji_list, emoji_list_text)
-        except:
-            emoji_list = None
-            emoji_list_text = None
-            print("无动态文本表情")
-        try:
-            if data['data']['items'][i]['modules']['module_dynamic']['major']['archive']['cover']:
-                cover_url = data['data']['items'][i]['modules']['module_dynamic']['major']['archive']['cover']
-                print("视频封面 URL:", cover_url)
-        except:
-            cover_url = None
-            print("无视频封面")
-        try:
-            if data['data']['items'][i]['modules']['module_dynamic']['major']['archive']['title']:
-                video_title = data['data']['items'][i]['modules']['module_dynamic']['major']['archive']['title']
-                print("视频标题:", video_title)
-        except:
-            video_title = None
-            print("无视频标题")
-        try:
-            if data['data']['items'][i]['modules']['module_dynamic']['major']['archive']['desc']:
-                description = data['data']['items'][i]['modules']['module_dynamic']['major']['archive']['desc']
-                print("视频简介:", description)
-        except:
-            description = None
-            print("无视频简介")
-        try:
-            if data['data']['items'][i]['modules']['module_dynamic']['major']['draw']['items']:
-                items_list = data['data']['items'][i]['modules']['module_dynamic']['major']['draw']['items']
-                src_list = [item['src'] for item in items_list if 'src' in item]
-                print("动态图片 URL:", src_list)
-        except:
-            src_list = None
-            print("无动态图片")
-        try:
-            if data['data']['items'][i]['modules']['module_dynamic']['major']['live_rcmd']['content']:
-                live = data['data']['items'][i]['modules']['module_dynamic']['major']['live_rcmd']['content']
-                # 解析 JSON 字符串
-                live_data = json.loads(live)
-                live_cover_url = live_data['live_play_info']['cover']
-                live_title = live_data['live_play_info']['title']
-                print("直播封面 URL:", live_cover_url)
-                print("直播标题:", live_title)
-        except:
-            live_cover_url = None
-            live_title = None
         username_url = data['data']['items'][i]['modules']['module_author']['face']  # 头像
         username = data['data']['items'][i]['modules']['module_author']['name']  # 用户名名称
         pub_action = data['data']['items'][i]['modules']['module_author']['pub_action']
         pub_time = data['data']['items'][i]['modules']['module_author']['pub_time']
         # pub_action :投稿了视频\直播了\投稿了文章\更新了合集\与他人联合创作\发布了动态视频\投稿了直播回放
         # pub_time :更新时间
+        base_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "path")
+        path = os.path.join(base_path, f"{id}.png")
+
+        if os.path.exists(path) or pub_action == '直播了':
+            if room_id != 0:
+                id = room_id
+                base_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "path")
+                path = os.path.join(base_path, f"{id}.png")
+                url = 'https://api.live.bilibili.com/room/v1/Room/get_info'
+                params = {
+                    'room_id': room_id
+                }
+                # 添加头信息
+                headers = {
+                    'User-Agent': User_Agent,
+                    'Referer': 'https://www.bilibili.com/',
+                    'Origin': 'https://www.bilibili.com',
+                    'Host': 'api.live.bilibili.com',
+                }
+                cookies = {
+                    'SESSDATA': SESSDATA,
+                }
+                urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+                response = requests.get(url, params=params, headers=headers, cookies=cookies, verify=False)
+                if response.status_code == 200:
+                    live_data = response.json()
+                    if live_data['code'] == 0:
+                        # 直播状态 0：未开播 1：直播中 2：轮播中
+                        live_status = live_data['data']['live_status']
+                        if live_status == 1:
+                            pub_action = '直播了'
+                            pub_time = ''
+                            # 直播封面
+                            live_cover_url = live_data['data']['user_cover']
+                            # 直播标题
+                            live_title = live_data['data']['title']
+                            if os.path.exists(path):
+                                return
+                            else:
+                                print(f"检测到 {username} 直播间开启")
+                                print("up:", username)
+                                print("up头像", username_url)
+                                print("直播间标题", live_title)
+                                print("直播间封面：", live_cover_url)
+                        else:
+                            if os.path.exists(path):
+                                os.remove(path)
+                            return
+                    else:
+                        print("调用直播接口失败")
+                        return
+                else:
+                    print(f"请求失败，状态码: {response.status_code}")
+                    return
+            else:
+                return
+        else:
+            print(f"检测到 {username} 动态更新")
+            live_cover_url = None
+            live_title = None
+            try:
+                if data['data']['items'][i]['modules']['module_dynamic']['desc']['text']:
+                    dynamic_text = data['data']['items'][i]['modules']['module_dynamic']['desc']['text']
+                    print("原动态文本:", dynamic_text)
+            except:
+                dynamic_text = None
+                print("无动态文本")
+            try:
+                if data['data']['items'][i]['modules']['module_dynamic']['desc']['rich_text_nodes']:
+                    items_list = data['data']['items'][i]['modules']['module_dynamic']['desc']['rich_text_nodes']
+                    emoji_list = [node['emoji']['icon_url'] for node in items_list if 'emoji' in node]
+                    emoji_list_text = [node['emoji']['text'] for node in items_list if 'emoji' in node]
+                    print("动态文本表情 URL:", emoji_list, emoji_list_text)
+            except:
+                emoji_list = None
+                emoji_list_text = None
+                print("无动态文本表情")
+            try:
+                if data['data']['items'][i]['modules']['module_dynamic']['major']['archive']['cover']:
+                    cover_url = data['data']['items'][i]['modules']['module_dynamic']['major']['archive']['cover']
+                    print("视频封面 URL:", cover_url)
+            except:
+                cover_url = None
+                print("无视频封面")
+            try:
+                if data['data']['items'][i]['modules']['module_dynamic']['major']['archive']['title']:
+                    video_title = data['data']['items'][i]['modules']['module_dynamic']['major']['archive']['title']
+                    print("视频标题:", video_title)
+            except:
+                video_title = None
+                print("无视频标题")
+            try:
+                if data['data']['items'][i]['modules']['module_dynamic']['major']['archive']['desc']:
+                    description = data['data']['items'][i]['modules']['module_dynamic']['major']['archive']['desc']
+                    print("视频简介:", description)
+            except:
+                description = None
+                print("无视频简介")
+            try:
+                if data['data']['items'][i]['modules']['module_dynamic']['major']['draw']['items']:
+                    items_list = data['data']['items'][i]['modules']['module_dynamic']['major']['draw']['items']
+                    src_list = [item['src'] for item in items_list if 'src' in item]
+                    print("动态图片 URL:", src_list)
+            except:
+                src_list = None
+                print("无动态图片")
+
         if pub_action == '':
             pub_text = pub_time
         elif pub_time == '':
@@ -126,6 +192,7 @@ def get_information(UID):
         else:
             pub_text = pub_time + "·" + pub_action
         print("更新时间,更新动作描述:", pub_text)
+
         # 加载头像图片和视频封面图片
         response = requests.get(username_url)
         avatar_image = Image.open(BytesIO(response.content))  # 头像
@@ -134,8 +201,8 @@ def get_information(UID):
             cover_image = Image.open(BytesIO(response.content))
             cover_image = cover_image.resize((int(cover_image.width // 3.5), int(cover_image.height // 4)))  # 视频封面缩小
             cover_image = create_rounded_rectangle_image(cover_image, 10)
-        # 缩小头像图片为五分之一
-        avatar_image = avatar_image.resize((avatar_image.width // 5, avatar_image.height // 5))
+        # 调整头像图片为大小
+        avatar_image = avatar_image.resize((80, 80), Image.LANCZOS)
         # 将头像转换为圆形
         avatar_image = create_circle_image(avatar_image)
 
@@ -169,12 +236,12 @@ def get_information(UID):
 
         # 添加更新时间,更新动作描述到背景图片上
         x_position = 150  # 文本的x坐标
-        y_position = 80  # 文本的y坐标
+        y_position = 70  # 文本的y坐标
         draw.text((x_position, y_position), pub_text, font=font_xi, fill=(169, 169, 169))
 
         if dynamic_text is not None:
             # 添加动态文本内容到背景图片上
-            x_position = 80  # 文本的x坐标
+            x_position = 50  # 文本的x坐标
             y_position += 50  # 将 y 坐标向下移动
             i = 0
             for line in dynamic_text.split('\n'):
@@ -205,7 +272,10 @@ def get_information(UID):
         if video_title is not None:
             # 添加视频标题到背景图片上
             x_position = 70 + cover_image.width  # 文本的x坐标
-            y_position += 20  # 文本的y坐标
+            if dynamic_text is not None:
+                y_position += 20  # 文本的y坐标
+            else:
+                y_position += 50  # 文本的y坐标
             y_line_position = y_position
             if cover_url is not None:
                 # 将视频封面图片粘贴到背景图片的指定位置
@@ -216,10 +286,10 @@ def get_information(UID):
                 draw.text((x_position, y_position), line, font=font_cu, fill='black')
                 y_position += 35  # 每行文本之间的间距
                 len_video_title = max(x_position + len(line) * 30, len_video_title)
+            len_description = 0
             if description is not None:
                 # 添加视频简介到背景图片上
                 y_position += 40  # 将 y 坐标向下移动
-                len_description = 0
                 i = 0
                 for line in description.split('\n'):
                     if i > 2:
@@ -304,12 +374,12 @@ def get_information(UID):
 
         # 添加更新时间,更新动作描述到背景图片上
         x_position = 150  # 文本的x坐标
-        y_position = 80  # 文本的y坐标
+        y_position = 70  # 文本的y坐标
         draw.text((x_position, y_position), pub_text, font=font_xi, fill=(169, 169, 169))
 
         if dynamic_text is not None:
             # 添加动态文本内容到背景图片上
-            x_position = 80  # 文本的x坐标
+            x_position = 50  # 文本的x坐标
             y_position += 50  # 将 y 坐标向下移动
             i = 0
             for line in dynamic_text.split('\n'):
@@ -340,7 +410,10 @@ def get_information(UID):
         if video_title is not None:
             # 添加视频标题到背景图片上
             x_position = 70 + cover_image.width  # 文本的x坐标
-            y_position += 20  # 文本的y坐标
+            if dynamic_text is not None:
+                y_position += 20  # 文本的y坐标
+            else:
+                y_position += 50  # 文本的y坐标
             y_line_position = y_position
             if cover_url is not None:
                 # 将视频封面图片粘贴到背景图片的指定位置
@@ -351,10 +424,10 @@ def get_information(UID):
                 draw.text((x_position, y_position), line, font=font_cu, fill='black')
                 y_position += 35  # 每行文本之间的间距
                 len_video_title = max(x_position + len(line) * 30, len_video_title)
+            len_description = 0
             if description is not None:
                 # 添加视频简介到背景图片上
                 y_position += 40  # 将 y 坐标向下移动
-                len_description = 0
                 i = 0
                 for line in description.split('\n'):
                     if i > 2:
