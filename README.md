@@ -11,29 +11,23 @@
 
 前往图床  https://sm.ms/  进行注册并获取token
 
-在本插件文件夹下main.py文件中找到这行(大概在17行左右)，并替换成你获取到的token（不要弄丢引号）
+在本插件文件夹下main.py文件中找到这行(大概在19行左右)，并替换成你获取到的token（不要弄丢引号）
 ```
 api_token = 'YOUR_TOKEN'  # 请将这里的'YOUR_TOKEN'替换为你实际获取的token
 ```
 
 ## 配置
 
-将main.py文件中找到这行(大概在155行左右)，并替换成需要推送动态的群号，当然你也可以将'group'改成'person'并将群号改成个人账号为你私人推送动态通知
+将main.py文件中找到这行(大概在198行左右)，并替换成需要推送动态的群号，当然你也可以将'group'改成'person'并将群号改成个人账号为你私人推送动态通知
 ```
 await ctx.send_message(target_type='group', target_id=123456789, message=MessageChain([Image(url=image_url)]))
 ```
 
-将dynamic.py文件中找到下面的部分(大概在17行左右)，并进行配置你的'User-Agent'和'SESSDATA'，具体如何获取请自行百度或ChatGPT(很简单)，强烈建议使用B站小号以防B站账号被官方认定为机器人
+将dynamic.py文件中找到下面的部分(大概在11行左右)，并进行配置你的'User-Agent'和'SESSDATA'，具体如何获取请自行百度或ChatGPT(很简单)，强烈建议使用B站小号以防B站账号被官方认定为机器人
 ```
-headers = {
-        'User-Agent': '',
-        'Referer': 'https://www.bilibili.com/',
-        'Origin': 'https://www.bilibili.com',
-        'Host': 'api.bilibili.com',
-    }
-    cookies = {
-        'SESSDATA': '',
-    }
+User_Agent = ""
+SESSDATA = ""
+
 ```
 
 ## 注意
@@ -49,6 +43,5 @@ UID.txt中为你已关注的up主的UID
 ```
 
 注意：上述所有命令只可以私聊发送，在群聊中无法识别。
-开播提示大约有15分钟的延迟
 
 ![示例图片](https://s2.loli.net/2024/10/02/o7r2bQNBeLkTzmv.png)
