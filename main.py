@@ -44,7 +44,8 @@ class B_Live(BasePlugin):
                 else:
                     thread = threading.Thread(target=self.run_in_thread, args=(ctx,), daemon=True)
                     thread.start()
-                    
+                    makesure_thread = threading.Thread(target=self.makesure_run_in_thread, args=(ctx,), daemon=True)
+                    makesure_thread.start()
             else:
                 self.ap.logger.info("线程已经在运行中，跳过启动。")
                 await ctx.event.query.adapter.reply_message(ctx.event.query.message_event, [("动态推送已开启，无需重复开启")], False)
