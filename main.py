@@ -205,6 +205,7 @@ class B_Live(BasePlugin):
                     await asyncio.sleep(60)
                 except:
                     continue
+                    
     # 插件卸载时触发
     def __del__(self):
         pass
