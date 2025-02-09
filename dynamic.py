@@ -8,8 +8,8 @@ from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 import urllib3
 
-User_Agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36"
-SESSDATA = "f2155e53%2C1743061593%2Cb3387%2A91CjAmyos_WgzD5j-CqeY9naaYIiiPaQc-q27XL3dh-yDUoqoO9OPDFYiUWvxkcDVzcK0SVmMxQ1pYWUVNM0I3N3BLTjd0U21VZ0F1QjBZV3Jjd1FSRWRQM01BUVF4Q2ptVWdOVkdrV25Dd09waC1kc3FqVnFJTUI2bzlKNFctRmQzNjNYdVB5M1V3IIEC"
+User_Agent = ""
+SESSDATA = ""
 
 def get_information(UID, room_id):
     # live_cover_url直播封面
