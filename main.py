@@ -166,7 +166,7 @@ class B_Live(BasePlugin):
                     self.ap.logger.info("动态推送线程正在运行中...")
                 try:
                     for id in ids:
-                        await asyncio.sleep(120)
+                        await asyncio.sleep(max(60/max(len(ids), 1), 15))
                         uid = id.split("|")[0]
                         room_id = id.split("|")[1]
                         get_information(uid, room_id)
@@ -205,7 +205,6 @@ class B_Live(BasePlugin):
                                         #     await ctx.send_message(target_type='group', target_id=123456789, message=text)
                                 except:
                                     continue
-                    await asyncio.sleep(60)
                 except:
                     continue
                     
