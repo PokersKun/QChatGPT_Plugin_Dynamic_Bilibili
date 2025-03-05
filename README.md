@@ -7,15 +7,6 @@
 ```
 或查看详细的[插件安装说明](https://github.com/RockChinQ/QChatGPT/wiki/5-%E6%8F%92%E4%BB%B6%E4%BD%BF%E7%94%A8)
 
-## 使用
-
-前往图床  https://sm.ms/  进行注册并获取token  
-
-在本插件文件夹下main.py文件中找到这行(大概在19行左右)，并替换成你获取到的token（不要弄丢引号）
-```
-api_token = 'YOUR_TOKEN'  # 请将这里的'YOUR_TOKEN'替换为你实际获取的token
-```
-
 ## 配置
 
 将main.py文件中找到这行(大概在200行左右)，并替换成需要推送动态的群号，当然你也可以将'group'改成'person'并将群号改成个人账号为你私人推送动态通知

@@ -16,7 +16,6 @@ makesure_stop_thread = False
 thread = None
 makesure_thread = None
 text = ''
-api_token = 'YOUR_TOKEN'  # 请将这里的'YOUR_TOKEN'替换为你实际获取的token
 # 注册插件
 @register(name="Dynamic_Bilibili", description="获取b站up的动态和直播推送", version="0.1", author="zzseki")
 class B_Live(BasePlugin):
@@ -179,27 +178,10 @@ class B_Live(BasePlugin):
                                         text = lines[-1].replace("\n", "")
                                         self.ap.logger.info(text)
                                         if re.search('.png', text):
-                                            # 设置 API Token 和上传图片的路径
-                                            global api_token
                                             file_path = text
-
-                                            # 设置请求头和文件
-                                            headers = {
-                                                'Authorization': api_token
-                                            }
-                                            files = {
-                                                'smfile': open(file_path, 'rb')
-                                            }
-
-                                            # 发起 POST 请求上传图片
-                                            response = requests.post('https://sm.ms/api/v2/upload', headers=headers,
-                                                                     files=files)
-                                            if response.status_code == 200:
-                                                inf = response.json()
-                                                image_url = inf['data']['url']
-                                                ctx.add_return("reply", [Image(url=image_url)])
-                                                await ctx.send_message(target_type='group', target_id=123456789,
-                                                                       message=MessageChain([Image(url=image_url)]))
+                                            ctx.add_return("reply", [Image(path=file_path)])
+                                            await ctx.send_message(target_type='group', target_id=123456789,
+                                                                    message=MessageChain([Image(path=file_path)]))
                                         # else:
                                         #     # await ctx.event.query.adapter.reply_message(ctx.event.query.message_event, [(text)],False)
                                         #     await ctx.send_message(target_type='group', target_id=123456789, message=text)
